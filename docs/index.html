@@ -9,8 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
         tailwind.config = {
@@ -48,9 +52,27 @@
                 transform: translateY(0);
             }
         }
-        /* Hide scrollbar for clean modal */
+
         .no-scroll {
             overflow: hidden;
+        }
+
+        .activity-btn {
+            transition: all 0.2s;
+        }
+
+            .activity-btn.selected {
+                background-color: #EA580C;
+                color: white;
+                border-color: #EA580C;
+                transform: scale(1.05);
+            }
+        /* Map Container */
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 0.75rem;
+            z-index: 0;
         }
     </style>
 </head>
@@ -58,7 +80,7 @@
 
     <nav class="fixed w-full z-50 bg-white/95 backdrop-blur-sm shadow-sm transition-all duration-300" id="navbar">
         <div class="container mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="#" onclick="showView('landing')" class="flex items-center gap-2">
+            <a href="#" onclick="showView('landing')" class="flex items-center gap-2 cursor-pointer">
                 <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white text-xl">
                     <i class="ph-bold ph-users-three"></i>
                 </div>
@@ -68,8 +90,8 @@
                 </div>
             </a>
             <div class="hidden lg:flex items-center gap-8">
-                <a href="#about" class="text-gray-600 hover:text-primary font-medium text-sm uppercase">Process</a>
-                <a href="#membership" class="text-gray-600 hover:text-primary font-medium text-sm uppercase">Why Join</a>
+                <button onclick="showView('process')" class="text-gray-600 hover:text-primary font-medium text-sm uppercase">Process</button>
+                <button onclick="showView('join')" class="text-gray-600 hover:text-primary font-medium text-sm uppercase">Why Join</button>
                 <button onclick="toggleAuthModal()" class="px-6 py-2 bg-transparent border-2 border-primary text-primary rounded-full font-bold hover:bg-primary hover:text-white transition-all">
                     Member Login
                 </button>
@@ -87,6 +109,9 @@
                         <h1 class="text-5xl lg:text-7xl font-bold text-white mb-8 leading-tight">
                             Build real<br><span class="text-accent">Connections.</span>
                         </h1>
+                        <p class="text-white/80 text-lg mb-8 max-w-lg mx-auto lg:mx-0">
+                            Stop swiping. Start doing. We curate small groups of people to do fun activities based on your interests and budget.
+                        </p>
                         <button onclick="toggleAuthModal()" class="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition-all shadow-lg ring-4 ring-primary/30">
                             Start Matching
                         </button>
@@ -98,19 +123,109 @@
             </div>
             <div class="absolute bottom-0 left-0 w-full leading-0"><svg viewBox="0 0 1440 320" class="fill-white"><path fill-opacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,202.7C1248,181,1344,171,1392,165.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg></div>
         </section>
-        
         <footer class="bg-white py-12 text-center text-gray-500 text-sm">
             <p>&copy; 2024 MixMatched Inc. Join the community.</p>
         </footer>
     </div>
 
+    <div id="view-process" class="hidden min-h-screen bg-white pt-32 pb-12 fade-in">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-dark mb-4">How It Works</h2>
+                <p class="text-gray-500">We take the awkwardness out of meeting new people.</p>
+                <div class="w-20 h-1 bg-primary mx-auto mt-4"></div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="p-8 rounded-3xl bg-light border border-primary/10 text-center">
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm text-primary text-2xl font-bold">1</div>
+                    <h3 class="text-xl font-bold text-dark mb-3">Create Profile</h3>
+                    <p class="text-gray-600">Tell us what you like to do, your budget, and your vibe. We use this to find your people.</p>
+                </div>
+                <div class="p-8 rounded-3xl bg-white shadow-card border border-gray-100 text-center relative top-[-20px]">
+                    <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg text-white text-2xl font-bold">2</div>
+                    <h3 class="text-xl font-bold text-dark mb-3">Get Matched</h3>
+                    <p class="text-gray-600">Our algorithm groups you with 5 other compatible people for a specific activity.</p>
+                </div>
+                <div class="p-8 rounded-3xl bg-light border border-primary/10 text-center">
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm text-primary text-2xl font-bold">3</div>
+                    <h3 class="text-xl font-bold text-dark mb-3">Show Up</h3>
+                    <p class="text-gray-600">Meet your group at the venue. Have fun. If you click, exchange contacts afterwards.</p>
+                </div>
+            </div>
+
+            <div class="mt-16 text-center">
+                <button onclick="showView('landing')" class="text-gray-500 hover:text-dark font-bold underline">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-join" class="hidden min-h-screen bg-light pt-32 pb-12 fade-in">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-dark mb-4">Why MixMatched?</h2>
+                <div class="w-20 h-1 bg-primary mx-auto mt-4"></div>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h3 class="text-2xl font-bold text-dark mb-6">Adult friendship is hard. We make it easy.</h3>
+                    <ul class="space-y-6">
+                        <li class="flex gap-4">
+                            <div class="w-12 h-12 bg-white rounded-full flex-shrink-0 flex items-center justify-center text-green-500 shadow-sm"><i class="ph-fill ph-check-circle text-2xl"></i></div>
+                            <div>
+                                <h4 class="font-bold text-dark">Vetted Members</h4>
+                                <p class="text-gray-600 text-sm">Everyone is verified. No bots, no spam.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4">
+                            <div class="w-12 h-12 bg-white rounded-full flex-shrink-0 flex items-center justify-center text-green-500 shadow-sm"><i class="ph-fill ph-check-circle text-2xl"></i></div>
+                            <div>
+                                <h4 class="font-bold text-dark">Activities over Coffee</h4>
+                                <p class="text-gray-600 text-sm">Doing something fun removes the pressure of "interviews".</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-card">
+                    <h4 class="text-xl font-bold text-dark mb-6 text-center">Compare Us</h4>
+                    <table class="w-full text-left text-sm">
+                        <thead class="border-b border-gray-100">
+                            <tr>
+                                <th class="pb-3 text-gray-400 font-medium">Feature</th>
+                                <th class="pb-3 text-primary font-bold">MixMatched</th>
+                                <th class="pb-3 text-gray-400 font-medium">Apps</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr>
+                                <td class="py-4 font-bold text-dark">Group Size</td>
+                                <td class="py-4 text-primary">Curated (6)</td>
+                                <td class="py-4 text-gray-400">1-on-1</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4 font-bold text-dark">Planning</td>
+                                <td class="py-4 text-primary">Done for you</td>
+                                <td class="py-4 text-gray-400">DIY</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-16 text-center">
+                <button onclick="showView('landing')" class="text-gray-500 hover:text-dark font-bold underline">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
     <div id="view-onboarding" class="hidden min-h-screen bg-light pt-28 pb-12">
         <div class="container mx-auto px-6 max-w-4xl">
-            
+
             <div class="flex justify-between mb-8 relative">
                 <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10 rounded"></div>
                 <div id="progress-line" class="absolute top-1/2 left-0 w-0 h-1 bg-primary -z-10 rounded transition-all duration-500"></div>
-                
+
                 <div class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold relative z-10 step-indicator">1</div>
                 <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-bold relative z-10 step-indicator">2</div>
                 <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-bold relative z-10 step-indicator">3</div>
@@ -118,14 +233,14 @@
             </div>
 
             <form id="preferences-form" onsubmit="event.preventDefault(); submitPreferences();">
-                
+
                 <div class="step-content fade-in bg-white p-8 rounded-3xl shadow-card" id="step-1">
                     <h2 class="text-2xl font-bold text-dark mb-2">Where are you located?</h2>
                     <p class="text-gray-500 mb-6">We'll find groups near you.</p>
 
                     <div class="flex gap-4 mb-6 border-b border-gray-100">
                         <button type="button" onclick="toggleLocTab('zip')" id="tab-zip" class="pb-2 border-b-2 border-primary font-bold text-primary">Zip & Radius</button>
-                        <button type="button" onclick="toggleLocTab('city')" id="tab-city" class="pb-2 border-b-2 border-transparent text-gray-400 hover:text-dark">Manual Search</button>
+                        <button type="button" onclick="toggleLocTab('city')" id="tab-city" class="pb-2 border-b-2 border-transparent text-gray-400 hover:text-dark">Manual Map Search</button>
                     </div>
 
                     <div id="loc-content-zip">
@@ -150,12 +265,10 @@
                     </div>
 
                     <div id="loc-content-city" class="hidden">
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Search Cities (Max 5)</label>
-                        <input type="text" placeholder="Type a city name..." class="w-full p-4 bg-gray-50 rounded-xl mb-2">
-                        <div class="flex flex-wrap gap-2">
-                            <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-bold flex items-center gap-2">San Francisco <button type="button"><i class="ph-bold ph-x"></i></button></span>
-                            <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-bold flex items-center gap-2">Oakland <button type="button"><i class="ph-bold ph-x"></i></button></span>
-                        </div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Click Map to Select Cities (Max 5)</label>
+                        <div id="map"></div>
+                        <div id="selected-cities-list" class="flex flex-wrap gap-2 mt-4"></div>
+                        <p class="text-xs text-gray-400 mt-2">Click on the map to drop a pin.</p>
                     </div>
 
                     <div class="mt-8 flex justify-end">
@@ -166,7 +279,6 @@
                 <div class="step-content fade-in hidden bg-white p-8 rounded-3xl shadow-card" id="step-2">
                     <h2 class="text-2xl font-bold text-dark mb-2">Budget & Vibe</h2>
                     <p class="text-gray-500 mb-6">Help us curate the right activity.</p>
-
                     <div class="mb-8">
                         <label class="block text-sm font-bold text-gray-700 mb-3">Willingness to Pay (Per Event)</label>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -196,7 +308,6 @@
                             </label>
                         </div>
                     </div>
-
                     <div class="mb-8">
                         <label class="block text-sm font-bold text-gray-700 mb-3">Interests (Select all that apply)</label>
                         <div class="flex flex-wrap gap-4">
@@ -222,13 +333,11 @@
                             </label>
                         </div>
                     </div>
-
                     <div id="dynamic-activities" class="p-6 bg-accent/10 rounded-xl hidden">
-                        <h4 class="font-bold text-dark mb-2 text-sm uppercase tracking-wide">Suggested For You:</h4>
-                        <div id="suggestions-list" class="flex flex-wrap gap-2">
-                            </div>
+                        <h4 class="font-bold text-dark mb-2 text-sm uppercase tracking-wide">Tap to Select Specific Activities:</h4>
+                        <div id="suggestions-list" class="flex flex-wrap gap-3"></div>
+                        <p class="text-xs text-gray-500 mt-2">Select as many as you like!</p>
                     </div>
-
                     <div class="mt-8 flex justify-between">
                         <button type="button" onclick="nextStep(1)" class="text-gray-500 hover:text-dark font-bold">Back</button>
                         <button type="button" onclick="nextStep(3)" class="px-8 py-3 bg-dark text-white rounded-full font-bold hover:bg-primary transition-all">Next Step</button>
@@ -238,7 +347,6 @@
                 <div class="step-content fade-in hidden bg-white p-8 rounded-3xl shadow-card" id="step-3">
                     <h2 class="text-2xl font-bold text-dark mb-2">Final Details</h2>
                     <p class="text-gray-500 mb-6">Almost there.</p>
-
                     <div id="dietary-section" class="mb-8 hidden">
                         <div class="p-4 border-l-4 border-primary bg-primary/5 rounded-r-xl">
                             <label class="block text-sm font-bold text-gray-700 mb-3"><i class="ph-fill ph-fork-knife text-primary"></i> Since you chose Food, any restrictions?</label>
@@ -253,34 +361,23 @@
                             </select>
                         </div>
                     </div>
-
                     <div class="mb-8">
                         <label class="block text-sm font-bold text-gray-700 mb-3">Group Preferences</label>
                         <div class="space-y-3">
                             <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
                                 <input type="radio" name="mingle" value="balanced" checked class="text-primary focus:ring-primary">
-                                <div>
-                                    <span class="block font-bold text-dark">Gender Balanced</span>
-                                    <span class="text-xs text-gray-500">Mix of men and women</span>
-                                </div>
+                                <div><span class="block font-bold text-dark">Gender Balanced</span><span class="text-xs text-gray-500">Mix of men and women</span></div>
                             </label>
                             <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
                                 <input type="radio" name="mingle" value="same_gender" class="text-primary focus:ring-primary">
-                                <div>
-                                    <span class="block font-bold text-dark">Same Gender Only</span>
-                                    <span class="text-xs text-gray-500">Girls night / Guys night out</span>
-                                </div>
+                                <div><span class="block font-bold text-dark">Same Gender Only</span><span class="text-xs text-gray-500">Girls night / Guys night out</span></div>
                             </label>
                             <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
                                 <input type="radio" name="mingle" value="same_age" class="text-primary focus:ring-primary">
-                                <div>
-                                    <span class="block font-bold text-dark">Same Age Group (+/- 5 Years)</span>
-                                    <span class="text-xs text-gray-500">Strictly people my age</span>
-                                </div>
+                                <div><span class="block font-bold text-dark">Same Age Group (+/- 5 Years)</span><span class="text-xs text-gray-500">Strictly people my age</span></div>
                             </label>
                         </div>
                     </div>
-
                     <div class="mt-8 flex justify-between">
                         <button type="button" onclick="nextStep(2)" class="text-gray-500 hover:text-dark font-bold">Back</button>
                         <button type="button" onclick="submitPreferences()" class="px-8 py-3 bg-dark text-white rounded-full font-bold hover:bg-primary transition-all">Submit Profile</button>
@@ -288,86 +385,54 @@
                 </div>
 
                 <div class="step-content fade-in hidden bg-white p-8 rounded-3xl shadow-card text-center" id="step-4">
-                    <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
-                        <i class="ph-fill ph-check"></i>
-                    </div>
+                    <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl"><i class="ph-fill ph-check"></i></div>
                     <h2 class="text-3xl font-bold text-dark mb-4">Profile Created!</h2>
-                    <p class="text-gray-600 mb-8 max-w-md mx-auto">
-                        We are currently looking for 5 other people who match your vibe, budget, and location.
-                    </p>
-                    
+                    <p class="text-gray-600 mb-8 max-w-md mx-auto">We are currently looking for 5 other people who match your vibe, budget, and location.</p>
                     <div class="bg-gray-50 p-6 rounded-2xl max-w-md mx-auto text-left mb-8">
                         <h4 class="font-bold text-dark mb-4 border-b pb-2">Your Matching Criteria</h4>
-                        <div class="flex items-center gap-3 mb-2">
-                            <i class="ph-fill ph-wallet text-primary"></i> <span id="dash-budget">Budget: $20-40</span>
-                        </div>
-                        <div class="flex items-center gap-3 mb-2">
-                            <i class="ph-fill ph-map-pin text-primary"></i> <span id="dash-loc">Searching in 15 mile radius</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <i class="ph-fill ph-users text-primary"></i> <span id="dash-group">Waiting for group formation...</span>
-                        </div>
+                        <div class="flex items-center gap-3 mb-2"><i class="ph-fill ph-wallet text-primary"></i> <span id="dash-budget">Budget: $20-40</span></div>
+                        <div class="flex items-center gap-3 mb-2"><i class="ph-fill ph-map-pin text-primary"></i> <span id="dash-loc">Searching in 15 mile radius</span></div>
+                        <div class="flex items-center gap-3"><i class="ph-fill ph-users text-primary"></i> <span id="dash-group">Waiting for group formation...</span></div>
                     </div>
-
                     <button type="button" onclick="alert('Demo: Contact sharing will be enabled once 6 people are matched!')" class="text-primary font-bold hover:underline">How does contact sharing work?</button>
                 </div>
-
             </form>
         </div>
     </div>
 
-<div id="view-group" class="hidden min-h-screen bg-light pt-28 pb-12">
+    <div id="view-group" class="hidden min-h-screen bg-light pt-28 pb-12">
         <div class="container mx-auto px-6 max-w-5xl">
-            
             <div class="text-center mb-12 fade-in">
                 <span class="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-bold uppercase tracking-widest">Match Found</span>
                 <h2 class="text-4xl font-bold text-dark mt-4">Meet Your Crew</h2>
                 <p class="text-gray-600 mt-2">We found 5 others who match your vibe and budget.</p>
             </div>
-
             <div class="grid lg:grid-cols-3 gap-8">
-                
                 <div class="lg:col-span-1 fade-in">
                     <div class="bg-white p-6 rounded-3xl shadow-card h-full border-t-8 border-primary relative overflow-hidden">
                         <h3 class="text-gray-400 font-bold text-xs uppercase tracking-widest mb-2">Selected Activity</h3>
                         <h2 class="text-2xl font-bold text-dark mb-4" id="match-activity-title">Sunset Hiking</h2>
-                        
                         <div class="space-y-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-primary"><i class="ph-bold ph-calendar"></i></div>
-                                <div>
-                                    <p class="text-xs text-gray-500 font-bold uppercase">Date</p>
-                                    <p class="font-bold text-dark">Sat, Mar 24 @ 5:00 PM</p>
-                                </div>
+                                <div><p class="text-xs text-gray-500 font-bold uppercase">Date</p><p class="font-bold text-dark">Sat, Mar 24 @ 5:00 PM</p></div>
                             </div>
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-primary"><i class="ph-bold ph-map-pin"></i></div>
-                                <div>
-                                    <p class="text-xs text-gray-500 font-bold uppercase">Location</p>
-                                    <p class="font-bold text-dark">West Ridge Trailhead</p>
-                                </div>
+                                <div><p class="text-xs text-gray-500 font-bold uppercase">Location</p><p class="font-bold text-dark">West Ridge Trailhead</p></div>
                             </div>
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-primary"><i class="ph-bold ph-wallet"></i></div>
-                                <div>
-                                    <p class="text-xs text-gray-500 font-bold uppercase">Est. Cost</p>
-                                    <p class="font-bold text-dark">$15 (Parking)</p>
-                                </div>
+                                <div><p class="text-xs text-gray-500 font-bold uppercase">Est. Cost</p><p class="font-bold text-dark">$15 (Parking)</p></div>
                             </div>
                         </div>
-
                         <div class="mt-8 pt-6 border-t border-gray-100">
-                            <button onclick="endEventDemo()" class="w-full py-3 bg-dark text-white rounded-xl font-bold hover:bg-gray-800 transition-all text-sm">
-                                Simulate: Event Finished
-                            </button>
-                            <p class="text-center text-xs text-gray-400 mt-2">(Click this to see Contact Sharing)</p>
+                            <button onclick="endEventDemo()" class="w-full py-3 bg-dark text-white rounded-xl font-bold hover:bg-gray-800 transition-all text-sm">Simulate: Event Finished</button>
                         </div>
                     </div>
                 </div>
-
                 <div class="lg:col-span-2">
-                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="members-grid">
-                        </div>
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="members-grid"></div>
                 </div>
             </div>
         </div>
@@ -375,62 +440,59 @@
 
     <div id="view-contact" class="hidden min-h-screen bg-white pt-28 pb-12">
         <div class="container mx-auto px-6 max-w-2xl">
-            
             <div class="text-center mb-8 fade-in">
-                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                    <i class="ph-bold ph-thumbs-up"></i>
-                </div>
+                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="ph-bold ph-thumbs-up"></i></div>
                 <h2 class="text-3xl font-bold text-dark">How was it?</h2>
-                <p class="text-gray-600">Select the people you'd like to stay in touch with. <br>Your details are only shared if the feeling is mutual.</p>
+                <p class="text-gray-600">Select the people you'd like to stay in touch with.</p>
             </div>
-
-            <div class="bg-gray-50 rounded-3xl p-8 shadow-inner" id="contact-list">
-                </div>
-
+            <div class="bg-gray-50 rounded-3xl p-8 shadow-inner" id="contact-list"></div>
             <div class="mt-8 flex justify-center">
-                <button onclick="submitContacts()" class="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition-all shadow-lg">
-                    Confirm Matches
-                </button>
+                <button onclick="submitContacts()" class="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition-all shadow-lg">Confirm Matches</button>
             </div>
-
         </div>
     </div>
 
-
     <div id="auth-modal" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 bg-dark/80 backdrop-blur-sm" onclick="toggleAuthModal()"></div>
-        
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-[fadeIn_0.3s_ease-out]">
             <div class="p-8">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-2xl font-bold text-dark" id="auth-title">Welcome!</h3>
-                    <button onclick="toggleAuthModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-colors">
-                        <i class="ph-bold ph-x"></i>
-                    </button>
+                    <button onclick="toggleAuthModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-colors"><i class="ph-bold ph-x"></i></button>
                 </div>
-
                 <div id="auth-forms">
-                    
+
                     <form id="form-login" class="space-y-4">
                         <input type="email" placeholder="Email Address" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                        <input type="password" placeholder="Password" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+
+                        <div class="relative">
+                            <input type="password" id="login-pass" placeholder="Password" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 pr-12">
+                            <button type="button" onclick="togglePassVisibility('login-pass')" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-dark">
+                                <i class="ph-bold ph-eye"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="button" onclick="forgotPassword()" class="text-sm text-primary font-bold hover:underline">Forgot Password?</button>
+                        </div>
+
                         <button type="button" onclick="loginDemo()" class="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all">Log In</button>
-                        <p class="text-center text-gray-500 text-sm">
-                            New here? <button type="button" onclick="switchAuthMode('signup')" class="text-primary font-bold hover:underline">Create Account</button>
-                        </p>
+                        <p class="text-center text-gray-500 text-sm">New here? <button type="button" onclick="switchAuthMode('signup')" class="text-primary font-bold hover:underline">Create Account</button></p>
                     </form>
 
                     <form id="form-signup" class="space-y-4 hidden">
                         <input type="text" id="signup-name" placeholder="Full Name" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
                         <input type="email" id="signup-email" placeholder="Email Address" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
 
-                        <input type="password" id="signup-password" placeholder="Create a Password" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <div class="relative">
+                            <input type="password" id="signup-password" placeholder="Create a Password" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 pr-12">
+                            <button type="button" onclick="togglePassVisibility('signup-password')" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-dark">
+                                <i class="ph-bold ph-eye"></i>
+                            </button>
+                        </div>
 
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-xs font-bold text-gray-400 ml-2">Date of Birth</label>
-                                <input type="date" id="signup-dob" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                            </div>
+                            <div><label class="text-xs font-bold text-gray-400 ml-2">Date of Birth</label><input type="date" id="signup-dob" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"></div>
                             <div>
                                 <label class="text-xs font-bold text-gray-400 ml-2">Gender</label>
                                 <select id="signup-gender" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
@@ -441,48 +503,31 @@
                             </div>
                         </div>
                         <button type="button" onclick="signupDemo()" class="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all">Create Profile</button>
-                        <p class="text-center text-gray-500 text-sm">
-                            Have an account? <button type="button" onclick="switchAuthMode('login')" class="text-primary font-bold hover:underline">Log In</button>
-                        </p>
+                        <p class="text-center text-gray-500 text-sm">Have an account? <button type="button" onclick="switchAuthMode('login')" class="text-primary font-bold hover:underline">Log In</button></p>
                     </form>
-
                 </div>
             </div>
         </div>
     </div>
+
     <script>
-        // ==========================================
         // 1. SUPABASE CONFIGURATION
-        // ==========================================
         const SUPABASE_URL = 'https://udfqdwbvjyghvrmifbdm.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_kp35QwhZVVPvJ_s3wYBlyA_P3Nq50qL';
-
-        // We use a distinct name 'supabaseClient' to avoid conflict with the library 'supabase'
         let supabaseClient;
-
         try {
-            // Check if the library loaded from the CDN
             if (typeof supabase !== 'undefined') {
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log("Supabase connected successfully.");
-            } else {
-                console.warn("Supabase library not loaded. Check your internet connection or CDN link.");
+                console.log("Supabase connected.");
             }
-        } catch (err) {
-            console.error("Initialization error:", err);
-        }
+        } catch (err) { console.error("Init error:", err); }
 
-        // ==========================================
-        // 2. VIEW & NAVIGATION LOGIC
-        // ==========================================
+        // 2. VIEW NAVIGATION
         function showView(viewName) {
-            // Hide all views
-            ['landing', 'onboarding', 'group', 'contact'].forEach(v => {
+            ['landing', 'process', 'join', 'onboarding', 'group', 'contact'].forEach(v => {
                 const el = document.getElementById(`view-${v}`);
                 if (el) el.classList.add('hidden');
             });
-
-            // Show selected view
             const selected = document.getElementById(`view-${viewName}`);
             if (selected) {
                 selected.classList.remove('hidden');
@@ -493,7 +538,6 @@
         function toggleAuthModal() {
             const modal = document.getElementById('auth-modal');
             const body = document.body;
-
             if (modal.classList.contains('hidden')) {
                 modal.classList.remove('hidden');
                 body.classList.add('no-scroll');
@@ -507,7 +551,6 @@
             const loginForm = document.getElementById('form-login');
             const signupForm = document.getElementById('form-signup');
             const title = document.getElementById('auth-title');
-
             if (mode === 'signup') {
                 loginForm.classList.add('hidden');
                 signupForm.classList.remove('hidden');
@@ -519,114 +562,74 @@
             }
         }
 
-        // ==========================================
-        // 3. AUTHENTICATION LOGIC
-        // ==========================================
+        // --- NEW: TOGGLE PASSWORD VISIBILITY ---
+        function togglePassVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+            field.setAttribute('type', type);
+        }
+
+        // 3. AUTH LOGIC
         async function loginDemo() {
             const email = document.querySelector('#form-login input[type="email"]').value;
-            const password = document.querySelector('#form-login input[type="password"]').value;
-
+            const password = document.getElementById('login-pass').value;
             if (supabaseClient) {
-                // Real Login
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password,
-                });
-
-                if (error) {
-                    alert("Login Error: " + error.message);
-                } else {
-                    console.log("Logged in:", data);
-                    toggleAuthModal();
-                    showView('onboarding');
-                }
-            } else {
-                // Fallback (Offline/Demo Mode)
-                console.log("Simulating login (Supabase not connected)");
-                toggleAuthModal();
-                showView('onboarding');
-            }
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) alert("Error: " + error.message);
+                else { toggleAuthModal(); showView('onboarding'); }
+            } else { toggleAuthModal(); showView('onboarding'); }
         }
 
         async function signupDemo() {
-            // 1. Get all values from the form
             const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value; // Now getting real input
+            const password = document.getElementById('signup-password').value;
             const name = document.getElementById('signup-name').value;
             const dob = document.getElementById('signup-dob').value;
             const gender = document.getElementById('signup-gender').value;
 
-            if (!email || !password || !name) {
-                alert("Please fill in all fields.");
-                return;
-            }
+            if (!email || !password || !name) { alert("Please fill in all fields."); return; }
 
             if (supabaseClient) {
-                // 2. Create the Auth User
                 const { data, error } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password,
-                    // We can pass extra metadata here
-                    options: {
-                        data: {
-                            full_name: name,
-                            dob: dob,
-                            gender: gender
-                        }
-                    }
+                    email, password, options: { data: { full_name: name, dob, gender } }
                 });
-
-                if (error) {
-                    alert("Signup Error: " + error.message);
-                } else {
-                    // 3. Insert into the 'profiles' table (Optional but recommended)
-                    // Note: This requires the 'profiles' table to exist in your DB.
-                    // If you just want to get Auth working, you can comment this block out.
-                    const { error: profileError } = await supabaseClient
-                        .from('profiles')
-                        .insert([
-                            {
-                                id: data.user.id, // Links to Auth User
-                                email: email,
-                                full_name: name,
-                                dob: dob || null,
-                                gender: gender
-                            }
-                        ]);
-
-                    if (profileError) {
-                        console.error("Error saving profile details:", profileError);
-                    }
-
+                if (error) { alert("Error: " + error.message); }
+                else {
+                    await supabaseClient.from('profiles').insert([{ id: data.user.id, email, full_name: name, dob: dob || null, gender }]);
                     alert("Account created! Please Log In.");
-                    // Switch back to Login view so they can use their new password
                     switchAuthMode('login');
                 }
+            } else { toggleAuthModal(); showView('onboarding'); }
+        }
+
+        // --- NEW: FORGOT PASSWORD ---
+        async function forgotPassword() {
+            const email = document.querySelector('#form-login input[type="email"]').value;
+            if (!email) { alert("Please enter your email address first."); return; }
+
+            if (supabaseClient) {
+                const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: 'http://localhost:3000', // Update this if you host elsewhere
+                });
+                if (error) alert(error.message);
+                else alert("Password reset link sent to your email!");
             } else {
-                // Fallback
-                console.log("Simulating signup with password: " + password);
-                toggleAuthModal();
-                showView('onboarding');
+                alert("Simulated: Password reset email sent!");
             }
         }
 
-        // ==========================================
-        // 4. ONBOARDING WIZARD LOGIC
-        // ==========================================
+        // 4. ONBOARDING & MAP LOGIC
         let currentStep = 1;
+        let map, mapMarkerGroup;
+        let selectedCities = []; // Stores map selections
 
         function nextStep(step) {
             document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`step-${step}`).classList.remove('hidden');
-
             const line = document.getElementById('progress-line');
             const indicators = document.querySelectorAll('.step-indicator');
-
-            if (step === 1) line.style.width = "0%";
-            if (step === 2) line.style.width = "33%";
-            if (step === 3) line.style.width = "66%";
-            if (step === 4) line.style.width = "100%";
-
+            const widths = ["0%", "33%", "66%", "100%"];
+            line.style.width = widths[step - 1];
             indicators.forEach((ind, index) => {
                 if (index + 1 <= step) {
                     ind.classList.remove('bg-gray-200', 'text-gray-500');
@@ -637,24 +640,22 @@
                 }
             });
             currentStep = step;
+
+            // Trigger Map Resize if showing map step (fixes rendering glitch)
+            if (step === 1 && !document.getElementById('loc-content-city').classList.contains('hidden')) {
+                setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+            }
         }
 
         function toggleLocTab(type) {
-            const zipContent = document.getElementById('loc-content-zip');
-            const cityContent = document.getElementById('loc-content-city');
-            const zipTab = document.getElementById('tab-zip');
-            const cityTab = document.getElementById('tab-city');
+            document.getElementById('loc-content-zip').classList.toggle('hidden', type !== 'zip');
+            document.getElementById('loc-content-city').classList.toggle('hidden', type !== 'city');
+            document.getElementById('tab-zip').className = type === 'zip' ? "pb-2 border-b-2 border-primary font-bold text-primary" : "pb-2 border-b-2 border-transparent text-gray-400 hover:text-dark";
+            document.getElementById('tab-city').className = type === 'city' ? "pb-2 border-b-2 border-primary font-bold text-primary" : "pb-2 border-b-2 border-transparent text-gray-400 hover:text-dark";
 
-            if (type === 'zip') {
-                zipContent.classList.remove('hidden');
-                cityContent.classList.add('hidden');
-                zipTab.classList.add('border-primary', 'text-primary');
-                cityTab.classList.remove('border-primary', 'text-primary');
-            } else {
-                zipContent.classList.add('hidden');
-                cityContent.classList.remove('hidden');
-                cityTab.classList.add('border-primary', 'text-primary');
-                zipTab.classList.remove('border-primary', 'text-primary');
+            if (type === 'city') {
+                initMap();
+                setTimeout(() => { if (map) map.invalidateSize(); }, 200);
             }
         }
 
@@ -665,15 +666,88 @@
             resultBox.innerHTML = `<i class="ph-bold ph-map-pin"></i> Found <span class="font-bold">${Math.floor(Math.random() * 20) + 5} cities</span> within ${radius} miles.`;
         }
 
-        // ==========================================
-        // 5. ACTIVITY & MATCHING LOGIC
-        // ==========================================
+        // --- NEW: LEAFLET MAP INTEGRATION ---
+        function initMap() {
+            if (map) return; // Initialize only once
+
+            // Default center: USA
+            map = L.map('map').setView([39.8283, -98.5795], 4);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }).addTo(map);
+
+            mapMarkerGroup = L.layerGroup().addTo(map);
+
+            // Click Handler
+            map.on('click', function (e) {
+                if (selectedCities.length >= 5) { alert("Max 5 cities allowed."); return; }
+
+                const lat = e.latlng.lat.toFixed(4);
+                const lng = e.latlng.lng.toFixed(4);
+                const cityName = `Loc (${lat}, ${lng})`; // In real app, Reverse Geocode here
+
+                // Add Marker
+                const marker = L.marker(e.latlng).addTo(mapMarkerGroup);
+
+                // Add to List
+                selectedCities.push({ lat, lng, marker });
+                renderSelectedCities();
+            });
+        }
+
+        function renderSelectedCities() {
+            const container = document.getElementById('selected-cities-list');
+            container.innerHTML = '';
+            selectedCities.forEach((city, index) => {
+                const badge = document.createElement('span');
+                badge.className = "px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-bold flex items-center gap-2";
+                badge.innerHTML = `Location ${index + 1} <button onclick="removeCity(${index})"><i class="ph-bold ph-x"></i></button>`;
+                container.appendChild(badge);
+            });
+        }
+
+        window.removeCity = function (index) {
+            // Remove marker from map
+            mapMarkerGroup.removeLayer(selectedCities[index].marker);
+            // Remove from array
+            selectedCities.splice(index, 1);
+            renderSelectedCities();
+        }
+
+        // 5. ACTIVITY LOGIC
         const activityMap = {
-            'low': { 'Outdoor': ['Hiking', 'Park Picnic'], 'Indoor': ['Board Game Night', 'Mall Walk'], 'Food': ['Street Tacos', 'Coffee Meetup'] },
-            'mid': { 'Outdoor': ['Kayaking', 'Minigolf'], 'Indoor': ['Museum Tour', 'Escape Room'], 'Food': ['Brunch', 'Casual Dining'] },
-            'high': { 'Outdoor': ['Guided City Tour', 'Theme Park'], 'Indoor': ['Pottery Class', 'Concert'], 'Food': ['Fine Dining', 'Wine Tasting'] },
-            'lux': { 'Outdoor': ['Yacht Rental', 'Private Retreat'], 'Indoor': ['VIP Theater', 'Spa Day'], 'Food': ['Michelin Star Dinner'] }
+            'low': {
+                'Outdoor': ['Hiking', 'Park Picnic', 'Frisbee Golf', 'Nature Walk', 'Street Photography', 'Beach Day'],
+                'Indoor': ['Board Game Night', 'Mall Scavenger Hunt', 'Library Visit', 'Coffee & Books', 'Open Mic Night'],
+                'Food': ['Street Tacos', 'Coffee Meetup', 'Ice Cream Social', 'Potluck', 'Food Truck Crawl'],
+                'Recreation': ['Community Yoga', 'Pickup Basketball', 'Bowling', 'Ping Pong', 'Running Group'],
+                'Education': ['Book Club', 'Free Museum Day', 'Language Exchange', 'History Walk', 'Trivia Night']
+            },
+            'mid': {
+                'Outdoor': ['Kayaking', 'Minigolf', 'Botanical Gardens', 'Zoo Visit', 'Outdoor Cinema', 'Bike Tour'],
+                'Indoor': ['Museum Tour', 'Escape Room', 'Art Gallery', 'Comedy Club', 'Cat Cafe', 'Arcade'],
+                'Food': ['Brunch', 'Casual Dining', 'Sushi Train', 'Brewery Tour', 'Dim Sum', 'Korean BBQ'],
+                'Recreation': ['Rock Climbing', 'TopGolf', 'Paint & Sip', 'Salsa Class', 'Axe Throwing'],
+                'Education': ['Cooking Class', 'Pottery Workshop', 'Wine & Paint', 'Guided Tour', 'Science Center']
+            },
+            'high': {
+                'Outdoor': ['Guided City Tour', 'Theme Park', 'Whitewater Rafting', 'Horseback Riding', 'Sailing Lesson'],
+                'Indoor': ['Pottery Class', 'Concert', 'Theater Show', 'Mixology Class', 'Glass Blowing'],
+                'Food': ['Fine Dining', 'Wine Tasting', 'Omakase', 'Steakhouse', 'Chef\'s Table'],
+                'Recreation': ['Spa Day', 'Private Box Seat', 'Golf Round', 'Go Kart Racing', 'VIP Club Access'],
+                'Education': ['Masterclass Workshop', 'Sommelier Course', 'Private Art Lesson', 'Tech Conference']
+            },
+            'lux': {
+                'Outdoor': ['Yacht Rental', 'Private Retreat', 'Helicopter Tour', 'Glamping', 'Hot Air Balloon'],
+                'Indoor': ['VIP Theater', 'Spa Day', 'Private Concert', 'Luxury Shopping', 'Casino VIP'],
+                'Food': ['Michelin Star Dinner', 'Private Chef', 'Champagne Tasting', 'Caviar Bar'],
+                'Recreation': ['Formula 1 Experience', 'Private Island Day', 'Exclusive Golf Club'],
+                'Education': ['Executive Summit', 'Retreat Workshop', 'Celebrity Meet & Greet']
+            }
         };
+
+        let selectedSubActivities = new Set();
 
         function updateSubActivities() {
             const budgetEls = document.getElementsByName('budget');
@@ -698,6 +772,7 @@
             const container = document.getElementById('dynamic-activities');
             const list = document.getElementById('suggestions-list');
             list.innerHTML = '';
+            selectedSubActivities.clear();
 
             if (selectedInterests.length > 0) {
                 container.classList.remove('hidden');
@@ -705,19 +780,29 @@
                     if (activityMap[selectedBudget] && activityMap[selectedBudget][interest]) {
                         const activities = activityMap[selectedBudget][interest];
                         activities.forEach(act => {
-                            const badge = document.createElement('span');
-                            badge.className = "px-3 py-1 bg-white text-dark border border-gray-200 rounded-lg text-sm font-bold shadow-sm";
-                            badge.innerText = act;
-                            list.appendChild(badge);
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = "activity-btn px-4 py-2 bg-white text-dark border border-gray-200 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 hover:border-primary/50";
+                            btn.innerText = act;
+                            btn.onclick = function () { toggleActivitySelection(act, btn); };
+                            list.appendChild(btn);
                         });
                     }
                 });
+            } else { container.classList.add('hidden'); }
+        }
+
+        function toggleActivitySelection(activity, element) {
+            if (selectedSubActivities.has(activity)) {
+                selectedSubActivities.delete(activity);
+                element.classList.remove('selected');
             } else {
-                container.classList.add('hidden');
+                selectedSubActivities.add(activity);
+                element.classList.add('selected');
             }
         }
 
-        // Mock Data for Match Logic
+        // Mock Data
         const mockPodMembers = [
             { name: "Sarah J.", age: 27, job: "UX Designer", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
             { name: "Mike T.", age: 29, job: "Teacher", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
@@ -727,69 +812,51 @@
         ];
 
         function submitPreferences() {
-            // Save to DB would go here
+            console.log("Selected Activities:", Array.from(selectedSubActivities));
             nextStep(4);
-            setTimeout(() => {
-                renderGroup();
-                showView('group');
-            }, 2500);
+            setTimeout(() => { renderGroup(); showView('group'); }, 2500);
         }
 
         function renderGroup() {
             const grid = document.getElementById('members-grid');
             grid.innerHTML = '';
             grid.innerHTML += `
-                        <div class="bg-primary/5 border-2 border-primary border-dashed p-4 rounded-2xl flex flex-col items-center justify-center text-center">
-                            <div class="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center text-primary mb-3">
-                                <i class="ph-fill ph-user text-3xl"></i>
-                            </div>
-                            <h4 class="font-bold text-dark">You</h4>
-                            <p class="text-xs text-gray-500">Ready to mingle</p>
-                        </div>
-                    `;
+                    <div class="bg-primary/5 border-2 border-primary border-dashed p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <div class="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center text-primary mb-3"><i class="ph-fill ph-user text-3xl"></i></div>
+                        <h4 class="font-bold text-dark">You</h4><p class="text-xs text-gray-500">Ready to mingle</p>
+                    </div>`;
             mockPodMembers.forEach(member => {
                 grid.innerHTML += `
-                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow">
-                                <img src="${member.img}" class="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-white shadow-sm">
-                                <h4 class="font-bold text-dark">${member.name}</h4>
-                                <p class="text-xs text-gray-500 uppercase font-bold tracking-wide mb-1">${member.age} • ${member.job}</p>
-                            </div>
-                        `;
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow">
+                            <img src="${member.img}" class="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-white shadow-sm">
+                            <h4 class="font-bold text-dark">${member.name}</h4>
+                            <p class="text-xs text-gray-500 uppercase font-bold tracking-wide mb-1">${member.age} • ${member.job}</p>
+                        </div>`;
             });
         }
 
-        function endEventDemo() {
-            renderContactForm();
-            showView('contact');
-        }
+        function endEventDemo() { renderContactForm(); showView('contact'); }
 
         function renderContactForm() {
             const list = document.getElementById('contact-list');
             list.innerHTML = '';
             mockPodMembers.forEach((member, index) => {
                 list.innerHTML += `
-                            <div class="flex items-center justify-between p-4 bg-white rounded-xl mb-3 border border-gray-100">
-                                <div class="flex items-center gap-4">
-                                    <img src="${member.img}" class="w-12 h-12 rounded-full object-cover">
-                                    <div>
-                                        <h4 class="font-bold text-dark">${member.name}</h4>
-                                        <p class="text-xs text-gray-500">Did you connect?</p>
-                                    </div>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" class="sr-only peer" id="contact-${index}">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                    <span class="ml-3 text-sm font-medium text-gray-900">Share</span>
-                                </label>
+                        <div class="flex items-center justify-between p-4 bg-white rounded-xl mb-3 border border-gray-100">
+                            <div class="flex items-center gap-4">
+                                <img src="${member.img}" class="w-12 h-12 rounded-full object-cover">
+                                <div><h4 class="font-bold text-dark">${member.name}</h4><p class="text-xs text-gray-500">Did you connect?</p></div>
                             </div>
-                        `;
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" id="contact-${index}">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                <span class="ml-3 text-sm font-medium text-gray-900">Share</span>
+                            </label>
+                        </div>`;
             });
         }
 
-        function submitContacts() {
-            alert("Great! If they check 'Share' for you too, you'll receive an email introduction.");
-            showView('landing');
-        }
+        function submitContacts() { alert("Great! If they check 'Share' for you too, you'll receive an email introduction."); showView('landing'); }
     </script>
 </body>
 </html>
