@@ -1,86 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MixMatched - Build Community. Experience Connections.</title>
-    
-    <!-- Google Fonts: DM Sans (Matches the reference) -->
+    <title>MixMatched - Build Community</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-    
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: {
-                            DEFAULT: '#EA580C', /* Warm Orange (Your Brand) */
-                            dark: '#C2410C',
-                        },
-                        dark: {
-                            DEFAULT: '#29150F', /* Deep Coffee */
-                            secondary: '#3D405B', /* Reference Navy Tone */
-                        },
+                        primary: { DEFAULT: '#EA580C', dark: '#C2410C' },
+                        dark: { DEFAULT: '#29150F', secondary: '#3D405B' },
                         light: '#FFF7ED',
-                        accent: '#F2CC8F', /* Soft Yellow from reference style */
-                        green: '#81B29A', /* Sage from reference */
+                        accent: '#F2CC8F',
+                        green: '#81B29A',
                     },
-                    fontFamily: {
-                        sans: ['DM Sans', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'card': '0 1rem 3rem rgba(0,0,0,.175)',
-                    }
+                    fontFamily: { sans: ['DM Sans', 'sans-serif'] },
                 }
             }
         }
     </script>
-
     <style>
-        html { scroll-behavior: smooth; }
-        
-        /* Rotating Text Animation (from reference) */
-        .cd-words-wrapper {
-            display: inline-block;
-            position: relative;
-            text-align: left;
-        }
-        .cd-words-wrapper b {
-            display: inline-block;
-            position: absolute;
-            white-space: nowrap;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.3s, transform 0.3s;
-        }
-        .cd-words-wrapper b.is-visible {
-            position: relative;
-            opacity: 1;
-            transform: translateY(0);
+        html {
+            scroll-behavior: smooth;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #FFF7ED; }
-        ::-webkit-scrollbar-thumb { background: #EA580C; border-radius: 4px; }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* Hide scrollbar for clean modal */
+        .no-scroll {
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-700 bg-white">
 
-    <!-- NAVIGATION -->
-    <nav class="fixed w-full z-50 transition-all duration-300 bg-white/95 backdrop-blur-sm shadow-sm">
+    <nav class="fixed w-full z-50 bg-white/95 backdrop-blur-sm shadow-sm transition-all duration-300" id="navbar">
         <div class="container mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="#" class="flex items-center gap-2 group">
-                <!-- Logo Image Placeholder -->
+            <a href="#" onclick="showView('landing')" class="flex items-center gap-2">
                 <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white text-xl">
                     <i class="ph-bold ph-users-three"></i>
                 </div>
@@ -89,454 +67,729 @@
                     <small class="text-xs text-gray-500 uppercase tracking-widest font-bold">Community Club</small>
                 </div>
             </a>
-
-            <!-- Desktop Menu -->
             <div class="hidden lg:flex items-center gap-8">
-                <a href="#home" class="text-gray-600 hover:text-primary font-medium text-sm uppercase tracking-wide">Home</a>
-                <a href="#about" class="text-gray-600 hover:text-primary font-medium text-sm uppercase tracking-wide">Process</a>
-                <a href="#membership" class="text-gray-600 hover:text-primary font-medium text-sm uppercase tracking-wide">Why Join</a>
-                <a href="#events" class="text-gray-600 hover:text-primary font-medium text-sm uppercase tracking-wide">Upcoming Pods</a>
-                <a href="#contact" class="px-6 py-2 bg-transparent border-2 border-primary text-primary rounded-full font-bold hover:bg-primary hover:text-white transition-all">Member Login</a>
+                <a href="#about" class="text-gray-600 hover:text-primary font-medium text-sm uppercase">Process</a>
+                <a href="#membership" class="text-gray-600 hover:text-primary font-medium text-sm uppercase">Why Join</a>
+                <button onclick="toggleAuthModal()" class="px-6 py-2 bg-transparent border-2 border-primary text-primary rounded-full font-bold hover:bg-primary hover:text-white transition-all">
+                    Member Login
+                </button>
             </div>
-
-            <!-- Mobile Toggle -->
-            <button class="lg:hidden text-2xl text-dark">
-                <i class="ph ph-list"></i>
-            </button>
         </div>
     </nav>
 
-    <!-- HERO SECTION (Split Layout + Waves) -->
-    <section id="home" class="relative bg-dark pt-32 pb-0 lg:pt-40 lg:pb-0 overflow-hidden min-h-[80vh] flex items-center">
-        <!-- Overlay -->
-        <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-dark/90 z-0"></div>
+    <div id="view-landing">
+        <section class="relative bg-dark pt-32 pb-20 lg:pt-40 min-h-[85vh] flex items-center overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-dark/90 z-0"></div>
+            <div class="container mx-auto px-6 relative z-10">
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="text-center lg:text-left">
+                        <h2 class="text-primary font-bold text-xl uppercase tracking-widest mb-2">Welcome to the Club</h2>
+                        <h1 class="text-5xl lg:text-7xl font-bold text-white mb-8 leading-tight">
+                            Build real<br><span class="text-accent">Connections.</span>
+                        </h1>
+                        <button onclick="toggleAuthModal()" class="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition-all shadow-lg ring-4 ring-primary/30">
+                            Start Matching
+                        </button>
+                    </div>
+                    <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 rotate-2">
+                        <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=1000" class="w-full opacity-80">
+                    </div>
+                </div>
+            </div>
+            <div class="absolute bottom-0 left-0 w-full leading-0"><svg viewBox="0 0 1440 320" class="fill-white"><path fill-opacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,202.7C1248,181,1344,171,1392,165.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg></div>
+        </section>
         
-        <!-- Top Wave (Upside down) -->
-        <!-- <div class="absolute top-0 left-0 w-full overflow-hidden rotate-180 leading-0">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" class="fill-white"><path fill-opacity="1" d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"></path></svg>
-        </div> -->
+        <footer class="bg-white py-12 text-center text-gray-500 text-sm">
+            <p>&copy; 2024 MixMatched Inc. Join the community.</p>
+        </footer>
+    </div>
 
-        <div class="container mx-auto px-6 relative z-10 pb-32">
-            <div class="grid lg:grid-cols-2 gap-12 items-center">
+    <div id="view-onboarding" class="hidden min-h-screen bg-light pt-28 pb-12">
+        <div class="container mx-auto px-6 max-w-4xl">
+            
+            <div class="flex justify-between mb-8 relative">
+                <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10 rounded"></div>
+                <div id="progress-line" class="absolute top-1/2 left-0 w-0 h-1 bg-primary -z-10 rounded transition-all duration-500"></div>
                 
-                <!-- Text Content -->
-                <div class="text-center lg:text-left">
-                    <h2 class="text-primary font-bold text-xl uppercase tracking-widest mb-2">Welcome to the Club</h2>
-                    
-                    <h1 class="text-5xl lg:text-7xl font-bold text-white mb-8 leading-tight">
-                        MixMatched is<br>
-                        <span class="cd-words-wrapper text-accent">
-                            <b class="is-visible">Community</b>
-                            <b>Connection</b>
-                            <b>Adventure</b>
-                        </span>
-                    </h1>
-
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                        <a href="#about" class="px-8 py-3 bg-white text-dark rounded-full font-bold hover:bg-gray-100 transition-all shadow-lg">Our Process</a>
-                        <a href="#contact" class="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition-all shadow-lg ring-4 ring-primary/30">Become a Member</a>
-                    </div>
-                </div>
-
-                <!-- Right Side Image/Video Area -->
-                <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/10 rotate-2 hover:rotate-0 transition-all duration-500">
-                    <div class="aspect-video bg-gray-800 relative">
-                        <!-- Simulate Video Embed or Hero Image -->
-                        <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover opacity-80" alt="Group of friends">
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <button class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary shadow-lg hover:scale-110 transition-transform">
-                                <i class="ph-fill ph-play text-2xl ml-1"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Bottom Wave -->
-        <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-0">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" class="fill-white"><path fill-opacity="1" d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"></path></svg>
-        </div>
-    </section>
-
-    <!-- ABOUT / PROCESS SECTION -->
-    <section id="about" class="py-24 bg-white relative">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-dark mb-4">About MixMatched</h2>
-                <div class="w-20 h-1 bg-primary mx-auto"></div>
+                <div class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold relative z-10 step-indicator">1</div>
+                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-bold relative z-10 step-indicator">2</div>
+                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-bold relative z-10 step-indicator">3</div>
+                <div class="w-10 h-10 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center font-bold relative z-10 step-indicator">4</div>
             </div>
 
-            <div class="grid lg:grid-cols-12 gap-12">
+            <form id="preferences-form" onsubmit="event.preventDefault(); submitPreferences();">
                 
-                <!-- Left Text -->
-                <div class="lg:col-span-5">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-6">Our Club History</h3>
-                    <p class="text-gray-600 mb-6 leading-relaxed">
-                        <strong class="text-dark">Since 2023</strong>, MixMatched has been redefining how adults make friends. We aren't just an app; we are a Bootstrap for your social life. 
-                    </p>
-                    <p class="text-gray-600 leading-relaxed">
-                        We believe connections happen when you are busy having fun. No awkward coffee dates. No resumes. Just real people doing real activities.
-                    </p>
-                    
-                    <div class="mt-8 p-6 bg-light rounded-2xl border-l-4 border-primary">
-                        <p class="italic text-gray-600">"The best way to predict the future is to create it together."</p>
-                        <p class="text-primary font-bold mt-2">- Founder</p>
-                    </div>
-                </div>
+                <div class="step-content fade-in bg-white p-8 rounded-3xl shadow-card" id="step-1">
+                    <h2 class="text-2xl font-bold text-dark mb-2">Where are you located?</h2>
+                    <p class="text-gray-500 mb-6">We'll find groups near you.</p>
 
-                <!-- Right Cards (Mimicking "Members" from reference) -->
-                <div class="lg:col-span-7 grid sm:grid-cols-2 gap-6">
-                    
-                    <!-- Card 1: Vibe Check -->
-                    <div class="bg-white rounded-xl shadow-card overflow-hidden group">
-                        <div class="relative overflow-hidden h-64">
-                            <img src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="Vibe Check">
-                            <div class="absolute bottom-4 left-4 bg-white p-2 rounded-lg shadow-md flex gap-2">
-                                <a href="#" class="w-8 h-8 flex items-center justify-center bg-primary text-white rounded-full hover:bg-dark"><i class="ph-bold ph-check"></i></a>
-                            </div>
-                        </div>
-                        <div class="p-6 flex items-center justify-between">
+                    <div class="flex gap-4 mb-6 border-b border-gray-100">
+                        <button type="button" onclick="toggleLocTab('zip')" id="tab-zip" class="pb-2 border-b-2 border-primary font-bold text-primary">Zip & Radius</button>
+                        <button type="button" onclick="toggleLocTab('city')" id="tab-city" class="pb-2 border-b-2 border-transparent text-gray-400 hover:text-dark">Manual Search</button>
+                    </div>
+
+                    <div id="loc-content-zip">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <h4 class="font-bold text-xl text-dark">Step 1: The Vibe</h4>
-                                <p class="text-gray-500 text-sm">We find your people.</p>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Zip Code</label>
+                                <input type="text" id="zipInput" placeholder="e.g. 10001" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 2: The Event -->
-                    <div class="bg-white rounded-xl shadow-card overflow-hidden group mt-8 sm:mt-0">
-                        <div class="relative overflow-hidden h-64">
-                            <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="Event">
-                            <div class="absolute bottom-4 left-4 bg-white p-2 rounded-lg shadow-md flex gap-2">
-                                <a href="#" class="w-8 h-8 flex items-center justify-center bg-green text-white rounded-full hover:bg-dark"><i class="ph-bold ph-calendar"></i></a>
-                            </div>
-                        </div>
-                        <div class="p-6 flex items-center justify-between">
                             <div>
-                                <h4 class="font-bold text-xl text-dark">Step 2: The Event</h4>
-                                <p class="text-gray-500 text-sm">Curated adventures.</p>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">Radius (Miles)</label>
+                                <select id="radiusInput" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" onchange="simulateCityFetch()">
+                                    <option value="5">5 Miles</option>
+                                    <option value="15">15 Miles</option>
+                                    <option value="50">50 Miles</option>
+                                    <option value="250">250 Miles</option>
+                                </select>
                             </div>
+                        </div>
+                        <div id="radius-results" class="mt-4 p-4 bg-green-50 text-green-800 rounded-xl text-sm hidden">
+                            <i class="ph-bold ph-map-pin"></i> Found <span class="font-bold">12 cities</span> in this range including New York, Jersey City, Hoboken...
                         </div>
                     </div>
 
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SECTION BG IMAGE (Newsletter Style) -->
-    <section class="py-24 bg-fixed bg-cover bg-center relative" style="background-image: url('https://images.unsplash.com/photo-1522163180403-a4e8d054d439?auto=format&fit=crop&q=80&w=1600');">
-        <div class="absolute inset-0 bg-primary/90"></div>
-        
-        <!-- Top Wave Divider -->
-        <div class="absolute top-0 left-0 w-full overflow-hidden leading-0">
-             <svg viewBox="0 0 1265 144" xmlns="http://www.w3.org/2000/svg" class="fill-white"><path fill-opacity="1" d="M 0 40 C 164 40 164 20 328 20 L 328 20 L 328 0 L 0 0 Z" stroke-width="0"></path> <path fill-opacity="1" d="M 327 20 C 445.5 20 445.5 89 564 89 L 564 89 L 564 0 L 327 0 Z" stroke-width="0"></path> <path fill-opacity="1" d="M 563 89 C 724.5 89 724.5 48 886 48 L 886 48 L 886 0 L 563 0 Z" stroke-width="0"></path><path fill-opacity="1" d="M 885 48 C 1006.5 48 1006.5 67 1128 67 L 1128 67 L 1128 0 L 885 0 Z" stroke-width="0"></path><path fill-opacity="1" d="M 1127 67 C 1196 67 1196 0 1265 0 L 1265 0 L 1265 0 L 1127 0 Z" stroke-width="0"></path></svg>
-        </div>
-
-        <div class="container mx-auto px-6 relative z-10 text-white">
-            <div class="max-w-xl">
-                <h2 class="text-3xl font-bold mb-4">Get notified of new pods</h2>
-                <p class="mb-8 text-white/80">Don't miss out when a Hiking or Foodie group opens in your area. Join the waitlist.</p>
-                
-                <form class="flex gap-2">
-                    <div class="relative flex-1">
-                        <i class="ph ph-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl"></i>
-                        <input type="email" placeholder="Email address" class="w-full pl-12 pr-4 py-4 rounded-lg text-dark focus:outline-none">
+                    <div id="loc-content-city" class="hidden">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Search Cities (Max 5)</label>
+                        <input type="text" placeholder="Type a city name..." class="w-full p-4 bg-gray-50 rounded-xl mb-2">
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-bold flex items-center gap-2">San Francisco <button type="button"><i class="ph-bold ph-x"></i></button></span>
+                            <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-bold flex items-center gap-2">Oakland <button type="button"><i class="ph-bold ph-x"></i></button></span>
+                        </div>
                     </div>
-                    <button class="bg-dark hover:bg-black px-8 py-4 rounded-lg font-bold transition-colors">Subscribe</button>
-                </form>
-            </div>
-        </div>
 
-        <!-- Bottom Wave Divider -->
-        <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-0 rotate-180">
-             <svg viewBox="0 0 1265 144" xmlns="http://www.w3.org/2000/svg" class="fill-white"><path fill-opacity="1" d="M 0 40 C 164 40 164 20 328 20 L 328 20 L 328 0 L 0 0 Z" stroke-width="0"></path> <path fill-opacity="1" d="M 327 20 C 445.5 20 445.5 89 564 89 L 564 89 L 564 0 L 327 0 Z" stroke-width="0"></path> <path fill-opacity="1" d="M 563 89 C 724.5 89 724.5 48 886 48 L 886 48 L 886 0 L 563 0 Z" stroke-width="0"></path><path fill-opacity="1" d="M 885 48 C 1006.5 48 1006.5 67 1128 67 L 1128 67 L 1128 0 L 885 0 Z" stroke-width="0"></path><path fill-opacity="1" d="M 1127 67 C 1196 67 1196 0 1265 0 L 1265 0 L 1265 0 L 1127 0 Z" stroke-width="0"></path></svg>
-        </div>
-    </section>
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" onclick="nextStep(2)" class="px-8 py-3 bg-dark text-white rounded-full font-bold hover:bg-primary transition-all">Next Step</button>
+                    </div>
+                </div>
 
-    <!-- MEMBERSHIP SECTION (Replaced with Comparison) -->
-    <section id="membership" class="py-24 bg-white">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-dark"><span class="text-primary">Membership</span> at MixMatched</h2>
-            </div>
+                <div class="step-content fade-in hidden bg-white p-8 rounded-3xl shadow-card" id="step-2">
+                    <h2 class="text-2xl font-bold text-dark mb-2">Budget & Vibe</h2>
+                    <p class="text-gray-500 mb-6">Help us curate the right activity.</p>
 
-            <div class="grid lg:grid-cols-12 gap-12">
-                
-                <!-- Comparison Table (Replaces Price Table) -->
-                <div class="lg:col-span-7">
-                    <h4 class="text-xl font-bold mb-6 text-dark">Why it works better</h4>
+                    <div class="mb-8">
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Willingness to Pay (Per Event)</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="budget" value="low" class="peer sr-only" onchange="updateSubActivities()">
+                                <div class="p-4 rounded-xl border-2 border-gray-100 text-center peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-gray-50 transition-all">
+                                    <span class="block font-bold text-lg text-dark">&lt;$20</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="budget" value="mid" class="peer sr-only" onchange="updateSubActivities()">
+                                <div class="p-4 rounded-xl border-2 border-gray-100 text-center peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-gray-50 transition-all">
+                                    <span class="block font-bold text-lg text-dark">$20-40</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="budget" value="high" class="peer sr-only" onchange="updateSubActivities()">
+                                <div class="p-4 rounded-xl border-2 border-gray-100 text-center peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-gray-50 transition-all">
+                                    <span class="block font-bold text-lg text-dark">$40-80</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="budget" value="lux" class="peer sr-only" onchange="updateSubActivities()">
+                                <div class="p-4 rounded-xl border-2 border-gray-100 text-center peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-gray-50 transition-all">
+                                    <span class="block font-bold text-lg text-dark">$80+</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Interests (Select all that apply)</label>
+                        <div class="flex flex-wrap gap-4">
+                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-full has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white transition-all">
+                                <input type="checkbox" name="interest" value="Indoor" class="sr-only" onchange="updateSubActivities()">
+                                <i class="ph-bold ph-armchair"></i> Indoor
+                            </label>
+                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-full has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white transition-all">
+                                <input type="checkbox" name="interest" value="Outdoor" class="sr-only" onchange="updateSubActivities()">
+                                <i class="ph-bold ph-tree"></i> Outdoor
+                            </label>
+                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-full has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white transition-all">
+                                <input type="checkbox" name="interest" value="Food" id="check-food" class="sr-only" onchange="updateSubActivities()">
+                                <i class="ph-bold ph-pizza"></i> Food
+                            </label>
+                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-full has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white transition-all">
+                                <input type="checkbox" name="interest" value="Recreation" class="sr-only" onchange="updateSubActivities()">
+                                <i class="ph-bold ph-game-controller"></i> Recreation
+                            </label>
+                            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border-2 border-gray-200 rounded-full has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-white transition-all">
+                                <input type="checkbox" name="interest" value="Education" class="sr-only" onchange="updateSubActivities()">
+                                <i class="ph-bold ph-book"></i> Educational
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="dynamic-activities" class="p-6 bg-accent/10 rounded-xl hidden">
+                        <h4 class="font-bold text-dark mb-2 text-sm uppercase tracking-wide">Suggested For You:</h4>
+                        <div id="suggestions-list" class="flex flex-wrap gap-2">
+                            </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-between">
+                        <button type="button" onclick="nextStep(1)" class="text-gray-500 hover:text-dark font-bold">Back</button>
+                        <button type="button" onclick="nextStep(3)" class="px-8 py-3 bg-dark text-white rounded-full font-bold hover:bg-primary transition-all">Next Step</button>
+                    </div>
+                </div>
+
+                <div class="step-content fade-in hidden bg-white p-8 rounded-3xl shadow-card" id="step-3">
+                    <h2 class="text-2xl font-bold text-dark mb-2">Final Details</h2>
+                    <p class="text-gray-500 mb-6">Almost there.</p>
+
+                    <div id="dietary-section" class="mb-8 hidden">
+                        <div class="p-4 border-l-4 border-primary bg-primary/5 rounded-r-xl">
+                            <label class="block text-sm font-bold text-gray-700 mb-3"><i class="ph-fill ph-fork-knife text-primary"></i> Since you chose Food, any restrictions?</label>
+                            <select class="w-full p-4 bg-white border border-gray-200 rounded-xl focus:outline-none">
+                                <option>No Preference</option>
+                                <option>Vegetarian</option>
+                                <option>Vegan</option>
+                                <option>Pescatarian</option>
+                                <option>Kosher</option>
+                                <option>Halal</option>
+                                <option>Gluten Free</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <label class="block text-sm font-bold text-gray-700 mb-3">Group Preferences</label>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="radio" name="mingle" value="balanced" checked class="text-primary focus:ring-primary">
+                                <div>
+                                    <span class="block font-bold text-dark">Gender Balanced</span>
+                                    <span class="text-xs text-gray-500">Mix of men and women</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="radio" name="mingle" value="same_gender" class="text-primary focus:ring-primary">
+                                <div>
+                                    <span class="block font-bold text-dark">Same Gender Only</span>
+                                    <span class="text-xs text-gray-500">Girls night / Guys night out</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 border border-gray-100 rounded-xl cursor-pointer hover:bg-gray-50">
+                                <input type="radio" name="mingle" value="same_age" class="text-primary focus:ring-primary">
+                                <div>
+                                    <span class="block font-bold text-dark">Same Age Group (+/- 5 Years)</span>
+                                    <span class="text-xs text-gray-500">Strictly people my age</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-between">
+                        <button type="button" onclick="nextStep(2)" class="text-gray-500 hover:text-dark font-bold">Back</button>
+                        <button type="button" onclick="submitPreferences()" class="px-8 py-3 bg-dark text-white rounded-full font-bold hover:bg-primary transition-all">Submit Profile</button>
+                    </div>
+                </div>
+
+                <div class="step-content fade-in hidden bg-white p-8 rounded-3xl shadow-card text-center" id="step-4">
+                    <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
+                        <i class="ph-fill ph-check"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-dark mb-4">Profile Created!</h2>
+                    <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                        We are currently looking for 5 other people who match your vibe, budget, and location.
+                    </p>
                     
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-center border-collapse">
-                            <thead>
-                                <tr class="bg-light">
-                                    <th class="p-4 text-left rounded-tl-xl text-dark">Features</th>
-                                    <th class="p-4 text-gray-500 font-normal">Dating Apps</th>
-                                    <th class="p-4 text-gray-500 font-normal">Meetups</th>
-                                    <th class="p-4 bg-primary text-white rounded-t-xl font-bold text-lg w-1/4">MixMatched</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b border-gray-100">
-                                    <th class="p-4 text-left font-medium text-gray-700">Vetted Members</th>
-                                    <td class="p-4 text-red-400"><i class="ph-fill ph-x-circle text-xl"></i></td>
-                                    <td class="p-4 text-green-500"><i class="ph-fill ph-check-circle text-xl"></i></td>
-                                    <td class="p-4 bg-primary/5 text-primary"><i class="ph-fill ph-check-circle text-xl"></i></td>
-                                </tr>
-                                <tr class="border-b border-gray-100">
-                                    <th class="p-4 text-left font-medium text-gray-700">Small Groups (4-6)</th>
-                                    <td class="p-4 text-red-400"><i class="ph-fill ph-x-circle text-xl"></i></td>
-                                    <td class="p-4 text-red-400"><i class="ph-fill ph-x-circle text-xl"></i></td>
-                                    <td class="p-4 bg-primary/5 text-primary"><i class="ph-fill ph-check-circle text-xl"></i></td>
-                                </tr>
-                                <tr class="border-b border-gray-100">
-                                    <th class="p-4 text-left font-medium text-gray-700">Curated Activities</th>
-                                    <td class="p-4 text-red-400"><i class="ph-fill ph-x-circle text-xl"></i></td>
-                                    <td class="p-4 text-green-500"><i class="ph-fill ph-check-circle text-xl"></i></td>
-                                    <td class="p-4 bg-primary/5 text-primary"><i class="ph-fill ph-check-circle text-xl"></i></td>
-                                </tr>
-                                <tr class="border-b border-gray-100">
-                                    <th class="p-4 text-left font-medium text-gray-700">No Awkward Rejection</th>
-                                    <td class="p-4 text-red-400"><i class="ph-fill ph-x-circle text-xl"></i></td>
-                                    <td class="p-4 text-red-400"><i class="ph-fill ph-x-circle text-xl"></i></td>
-                                    <td class="p-4 bg-primary/5 text-primary"><i class="ph-fill ph-check-circle text-xl"></i></td>
-                                </tr>
-                                <tr>
-                                    <th class="p-4 text-left font-medium text-gray-700">Real Friendships</th>
-                                    <td class="p-4 text-red-400"><i class="ph-fill ph-x-circle text-xl"></i></td>
-                                    <td class="p-4 text-gray-400"><i class="ph-fill ph-minus-circle text-xl"></i></td>
-                                    <td class="p-4 bg-primary/5 text-primary rounded-b-xl"><i class="ph-fill ph-check-circle text-xl"></i></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="bg-gray-50 p-6 rounded-2xl max-w-md mx-auto text-left mb-8">
+                        <h4 class="font-bold text-dark mb-4 border-b pb-2">Your Matching Criteria</h4>
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="ph-fill ph-wallet text-primary"></i> <span id="dash-budget">Budget: $20-40</span>
+                        </div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="ph-fill ph-map-pin text-primary"></i> <span id="dash-loc">Searching in 15 mile radius</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <i class="ph-fill ph-users text-primary"></i> <span id="dash-group">Waiting for group formation...</span>
+                        </div>
                     </div>
+
+                    <button type="button" onclick="alert('Demo: Contact sharing will be enabled once 6 people are matched!')" class="text-primary font-bold hover:underline">How does contact sharing work?</button>
                 </div>
 
-                <!-- Form (Right Side) -->
-                <div class="lg:col-span-5">
-                    <h4 class="text-xl font-bold mb-6 text-dark">Please join us!</h4>
-                    <form class="bg-primary p-8 rounded-3xl shadow-card text-white">
-                        <h4 class="text-2xl font-bold mb-6">Become a member</h4>
+            </form>
+        </div>
+    </div>
+
+<div id="view-group" class="hidden min-h-screen bg-light pt-28 pb-12">
+        <div class="container mx-auto px-6 max-w-5xl">
+            
+            <div class="text-center mb-12 fade-in">
+                <span class="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-bold uppercase tracking-widest">Match Found</span>
+                <h2 class="text-4xl font-bold text-dark mt-4">Meet Your Crew</h2>
+                <p class="text-gray-600 mt-2">We found 5 others who match your vibe and budget.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                
+                <div class="lg:col-span-1 fade-in">
+                    <div class="bg-white p-6 rounded-3xl shadow-card h-full border-t-8 border-primary relative overflow-hidden">
+                        <h3 class="text-gray-400 font-bold text-xs uppercase tracking-widest mb-2">Selected Activity</h3>
+                        <h2 class="text-2xl font-bold text-dark mb-4" id="match-activity-title">Sunset Hiking</h2>
                         
                         <div class="space-y-4">
-                            <div class="relative">
-                                <input type="text" id="name" class="peer w-full h-14 px-4 pt-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-transparent focus:outline-none focus:bg-white/20" placeholder="Full Name">
-                                <label for="name" class="absolute left-4 top-1 text-xs text-white/70 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-1 peer-focus:text-xs">Full Name</label>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-primary"><i class="ph-bold ph-calendar"></i></div>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-bold uppercase">Date</p>
+                                    <p class="font-bold text-dark">Sat, Mar 24 @ 5:00 PM</p>
+                                </div>
                             </div>
-                            
-                            <div class="relative">
-                                <input type="email" id="email" class="peer w-full h-14 px-4 pt-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-transparent focus:outline-none focus:bg-white/20" placeholder="Email">
-                                <label for="email" class="absolute left-4 top-1 text-xs text-white/70 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-1 peer-focus:text-xs">Email Address</label>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-primary"><i class="ph-bold ph-map-pin"></i></div>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-bold uppercase">Location</p>
+                                    <p class="font-bold text-dark">West Ridge Trailhead</p>
+                                </div>
                             </div>
-
-                            <div class="relative">
-                                <textarea id="msg" class="peer w-full h-32 px-4 pt-6 rounded-lg bg-white/10 border border-white/20 text-white placeholder-transparent focus:outline-none focus:bg-white/20 resize-none" placeholder="Message"></textarea>
-                                <label for="msg" class="absolute left-4 top-2 text-xs text-white/70 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-xs">Why do you want to join?</label>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-primary"><i class="ph-bold ph-wallet"></i></div>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-bold uppercase">Est. Cost</p>
+                                    <p class="font-bold text-dark">$15 (Parking)</p>
+                                </div>
                             </div>
-                            
-                            <button class="w-full h-14 bg-white text-primary font-bold rounded-lg hover:bg-light transition-colors">Submit Application</button>
                         </div>
-                    </form>
+
+                        <div class="mt-8 pt-6 border-t border-gray-100">
+                            <button onclick="endEventDemo()" class="w-full py-3 bg-dark text-white rounded-xl font-bold hover:bg-gray-800 transition-all text-sm">
+                                Simulate: Event Finished
+                            </button>
+                            <p class="text-center text-xs text-gray-400 mt-2">(Click this to see Contact Sharing)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" id="members-grid">
+                        </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- EVENTS SECTION (Adapted for "Upcoming Pods") -->
-    <section id="events" class="py-24 bg-light relative">
-        <div class="container mx-auto px-6">
-            <h2 class="text-3xl font-bold text-dark mb-8">Upcoming Pod Launches</h2>
+    <div id="view-contact" class="hidden min-h-screen bg-white pt-28 pb-12">
+        <div class="container mx-auto px-6 max-w-2xl">
             
-            <!-- Pod 1 -->
-            <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row gap-8 items-center">
-                <!-- Date Badge -->
-                <div class="flex lg:block items-center gap-2 lg:text-center min-w-[100px]">
-                    <h6 class="text-5xl font-bold text-primary leading-none">24</h6>
-                    <strong class="text-gray-500 uppercase tracking-widest text-sm">Feb 2024</strong>
+            <div class="text-center mb-8 fade-in">
+                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="ph-bold ph-thumbs-up"></i>
                 </div>
-
-                <!-- Image -->
-                <div class="w-full lg:w-64 h-48 rounded-2xl overflow-hidden relative group">
-                    <img src="https://images.unsplash.com/photo-1546213290-e1b492ab3eee?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Shopping">
-                    <div class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center text-dark"><i class="ph-bold ph-arrow-right"></i></div>
-                </div>
-
-                <!-- Info -->
-                <div class="flex-1">
-                    <h3 class="text-xl font-bold text-dark mb-3">The "Flea Market" Crew</h3>
-                    <p class="text-gray-600 mb-6">Explore the vintage market downtown, then grab street tacos. Perfect for creatives and thrifters.</p>
-                    
-                    <div class="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-100">
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-400 text-sm font-bold uppercase">Location:</span>
-                            <span class="text-dark font-medium">Downtown Arts District</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-400 text-sm font-bold uppercase">Spots:</span>
-                            <span class="text-primary font-medium">2 Left</span>
-                        </div>
-                        <a href="#" class="ml-auto px-6 py-2 bg-primary text-white rounded-full font-bold hover:bg-dark transition-colors">Join Pod</a>
-                    </div>
-                </div>
+                <h2 class="text-3xl font-bold text-dark">How was it?</h2>
+                <p class="text-gray-600">Select the people you'd like to stay in touch with. <br>Your details are only shared if the feeling is mutual.</p>
             </div>
 
-            <!-- Pod 2 -->
-            <div class="bg-primary/5 rounded-3xl p-6 shadow-sm border border-primary/10 flex flex-col lg:flex-row gap-8 items-center">
-                <!-- Date Badge -->
-                <div class="flex lg:block items-center gap-2 lg:text-center min-w-[100px]">
-                    <h6 class="text-5xl font-bold text-dark leading-none">28</h6>
-                    <strong class="text-gray-500 uppercase tracking-widest text-sm">Feb 2024</strong>
+            <div class="bg-gray-50 rounded-3xl p-8 shadow-inner" id="contact-list">
                 </div>
 
-                <!-- Image -->
-                <div class="w-full lg:w-64 h-48 rounded-2xl overflow-hidden relative group">
-                    <img src="https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&q=80&w=600" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Hiking">
-                    <div class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center text-dark"><i class="ph-bold ph-arrow-right"></i></div>
-                </div>
-
-                <!-- Info -->
-                <div class="flex-1">
-                    <h3 class="text-xl font-bold text-dark mb-3">Sunset Hiking Group</h3>
-                    <p class="text-gray-600 mb-6">Easy 3-mile loop to catch the sunset. Drinks afterwards at the lodge.</p>
-                    
-                    <div class="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-200">
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-400 text-sm font-bold uppercase">Location:</span>
-                            <span class="text-dark font-medium">West Ridge Trail</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-400 text-sm font-bold uppercase">Spots:</span>
-                            <span class="text-primary font-medium">4 Left</span>
-                        </div>
-                        <a href="#" class="ml-auto px-6 py-2 bg-dark text-white rounded-full font-bold hover:bg-primary transition-colors">Join Pod</a>
-                    </div>
-                </div>
+            <div class="mt-8 flex justify-center">
+                <button onclick="submitContacts()" class="px-8 py-3 bg-primary text-white rounded-full font-bold hover:bg-primary-dark transition-all shadow-lg">
+                    Confirm Matches
+                </button>
             </div>
 
         </div>
-    </section>
+    </div>
 
-    <!-- CONTACT SECTION -->
-    <section id="contact" class="py-24 bg-white">
-        <div class="container mx-auto px-6">
-            <div class="grid lg:grid-cols-2 gap-12">
-                
-                <!-- Contact Form -->
-                <div>
-                    <h2 class="text-4xl font-bold text-dark mb-2">Contact MixMatched</h2>
-                    <p class="text-gray-500 mb-8">Have questions about safety, groups, or becoming a host?</p>
 
-                    <form class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="relative">
-                                <input type="text" id="c-name" class="peer w-full h-14 px-4 pt-4 rounded-lg bg-gray-50 border border-gray-200 text-dark placeholder-transparent focus:outline-none focus:border-primary focus:bg-white transition-all" placeholder="Full Name">
-                                <label for="c-name" class="absolute left-4 top-1 text-xs text-gray-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-1 peer-focus:text-xs">Full Name</label>
-                            </div>
-                            <div class="relative">
-                                <input type="email" id="c-email" class="peer w-full h-14 px-4 pt-4 rounded-lg bg-gray-50 border border-gray-200 text-dark placeholder-transparent focus:outline-none focus:border-primary focus:bg-white transition-all" placeholder="Email">
-                                <label for="c-email" class="absolute left-4 top-1 text-xs text-gray-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-1 peer-focus:text-xs">Email</label>
-                            </div>
-                        </div>
+    <div id="auth-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-dark/80 backdrop-blur-sm" onclick="toggleAuthModal()"></div>
+        
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-[fadeIn_0.3s_ease-out]">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-dark" id="auth-title">Welcome!</h3>
+                    <button onclick="toggleAuthModal()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-colors">
+                        <i class="ph-bold ph-x"></i>
+                    </button>
+                </div>
 
-                        <div class="relative">
-                            <textarea id="c-msg" class="peer w-full h-32 px-4 pt-6 rounded-lg bg-gray-50 border border-gray-200 text-dark placeholder-transparent focus:outline-none focus:border-primary focus:bg-white transition-all resize-none" placeholder="Message"></textarea>
-                            <label for="c-msg" class="absolute left-4 top-2 text-xs text-gray-400 transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-xs">Message</label>
-                        </div>
-                        
-                        <button class="w-full h-14 bg-dark text-white font-bold rounded-lg hover:bg-primary transition-colors">Send Message</button>
+                <div id="auth-forms">
+                    
+                    <form id="form-login" class="space-y-4">
+                        <input type="email" placeholder="Email Address" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <input type="password" placeholder="Password" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <button type="button" onclick="loginDemo()" class="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all">Log In</button>
+                        <p class="text-center text-gray-500 text-sm">
+                            New here? <button type="button" onclick="switchAuthMode('signup')" class="text-primary font-bold hover:underline">Create Account</button>
+                        </p>
                     </form>
-                </div>
 
-                <!-- Info & Map -->
-                <div>
-                    <div class="bg-light p-8 rounded-3xl h-full flex flex-col justify-center items-center text-center relative overflow-hidden">
-                        <img src="images/WorldMap.svg" class="absolute inset-0 opacity-10 w-full h-full object-cover" alt="Map pattern"> <!-- Placeholder for map graphic if available -->
-                        <div class="relative z-10">
-                            <h4 class="text-2xl font-bold text-dark mb-2">New York City, NY</h4>
-                            <p class="text-gray-500 mb-6">Headquarters</p>
-                            
-                            <a href="mailto:hello@mixmatched.com" class="text-xl font-bold text-primary hover:underline">hello@mixmatched.com</a>
-                            <p class="mt-2 text-gray-600">(555) 123-4567</p>
+                    <form id="form-signup" class="space-y-4 hidden">
+                        <input type="text" id="signup-name" placeholder="Full Name" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <input type="email" id="signup-email" placeholder="Email Address" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
 
-                            <a href="#" class="inline-block mt-8 text-sm font-bold uppercase tracking-widest text-dark border-b-2 border-primary pb-1 hover:text-primary">Get Directions</a>
+                        <input type="password" id="signup-password" placeholder="Create a Password" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 ml-2">Date of Birth</label>
+                                <input type="date" id="signup-dob" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 ml-2">Gender</label>
+                                <select id="signup-gender" class="w-full p-4 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                    <option>Male</option>
+                                    <option>Female</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                        <button type="button" onclick="signupDemo()" class="w-full py-4 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all">Create Profile</button>
+                        <p class="text-center text-gray-500 text-sm">
+                            Have an account? <button type="button" onclick="switchAuthMode('login')" class="text-primary font-bold hover:underline">Log In</button>
+                        </p>
+                    </form>
 
+                </div>
             </div>
         </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="bg-white border-t border-gray-100 relative pt-24 pb-12">
-        <!-- Top Wave (Green from reference) -->
-        <div class="absolute top-0 left-0 w-full overflow-hidden leading-0 -translate-y-full">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" class="fill-white"><path fill="#81B29A" fill-opacity="0" d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"></path></svg>
-        </div>
-
-        <div class="container mx-auto px-6">
-            <div class="grid lg:grid-cols-3 gap-12 items-start">
-                
-                <!-- Logo -->
-                <div>
-                    <a href="#" class="flex items-center gap-2 group mb-6">
-                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white text-xl">
-                            <i class="ph-bold ph-users-three"></i>
-                        </div>
-                        <div class="leading-tight">
-                            <span class="block text-xl font-bold text-dark tracking-tight">MixMatched</span>
-                            <small class="text-xs text-gray-500 uppercase tracking-widest font-bold">Community Club</small>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Info -->
-                <div>
-                    <h5 class="font-bold text-lg text-dark mb-4">Join Us</h5>
-                    <p class="flex justify-between border-b border-gray-100 pb-2 mb-2">
-                        <span class="text-gray-500">Mon-Fri</span>
-                        <span class="font-bold text-dark">9:00 AM - 6:00 PM</span>
-                    </p>
-                    <p class="flex justify-between">
-                        <span class="text-gray-500">Sat-Sun</span>
-                        <span class="font-bold text-dark">Events Only</span>
-                    </p>
-                    <p class="text-gray-400 text-sm mt-8">Copyright © 2024 MixMatched Inc.</p>
-                </div>
-
-                <!-- Social -->
-                <div class="lg:text-right">
-                    <div class="flex lg:justify-end gap-4 mb-6">
-                        <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-dark hover:bg-primary hover:text-white transition-colors"><i class="ph-bold ph-instagram-logo"></i></a>
-                        <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-dark hover:bg-primary hover:text-white transition-colors"><i class="ph-bold ph-twitter-logo"></i></a>
-                        <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-dark hover:bg-primary hover:text-white transition-colors"><i class="ph-bold ph-whatsapp-logo"></i></a>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Bottom Wave (Green) -->
-        <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-0">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#81B29A" fill-opacity="1" d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"></path></svg>
-        </div>
-    </footer>
-
-    <!-- JS for Animation -->
+    </div>
     <script>
-        // Simple script to handle the rotating text
-        document.addEventListener('DOMContentLoaded', () => {
-            const words = document.querySelectorAll('.cd-words-wrapper b');
-            let index = 0;
-            setInterval(() => {
-                words[index].classList.remove('is-visible');
-                index = (index + 1) % words.length;
-                words[index].classList.add('is-visible');
+        // ==========================================
+        // 1. SUPABASE CONFIGURATION
+        // ==========================================
+        const SUPABASE_URL = 'https://udfqdwbvjyghvrmifbdm.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_kp35QwhZVVPvJ_s3wYBlyA_P3Nq50qL';
+
+        // We use a distinct name 'supabaseClient' to avoid conflict with the library 'supabase'
+        let supabaseClient;
+
+        try {
+            // Check if the library loaded from the CDN
+            if (typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log("Supabase connected successfully.");
+            } else {
+                console.warn("Supabase library not loaded. Check your internet connection or CDN link.");
+            }
+        } catch (err) {
+            console.error("Initialization error:", err);
+        }
+
+        // ==========================================
+        // 2. VIEW & NAVIGATION LOGIC
+        // ==========================================
+        function showView(viewName) {
+            // Hide all views
+            ['landing', 'onboarding', 'group', 'contact'].forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.add('hidden');
+            });
+
+            // Show selected view
+            const selected = document.getElementById(`view-${viewName}`);
+            if (selected) {
+                selected.classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function toggleAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const body = document.body;
+
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                body.classList.add('no-scroll');
+            } else {
+                modal.classList.add('hidden');
+                body.classList.remove('no-scroll');
+            }
+        }
+
+        function switchAuthMode(mode) {
+            const loginForm = document.getElementById('form-login');
+            const signupForm = document.getElementById('form-signup');
+            const title = document.getElementById('auth-title');
+
+            if (mode === 'signup') {
+                loginForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+                title.innerText = "Create Account";
+            } else {
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                title.innerText = "Welcome!";
+            }
+        }
+
+        // ==========================================
+        // 3. AUTHENTICATION LOGIC
+        // ==========================================
+        async function loginDemo() {
+            const email = document.querySelector('#form-login input[type="email"]').value;
+            const password = document.querySelector('#form-login input[type="password"]').value;
+
+            if (supabaseClient) {
+                // Real Login
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    alert("Login Error: " + error.message);
+                } else {
+                    console.log("Logged in:", data);
+                    toggleAuthModal();
+                    showView('onboarding');
+                }
+            } else {
+                // Fallback (Offline/Demo Mode)
+                console.log("Simulating login (Supabase not connected)");
+                toggleAuthModal();
+                showView('onboarding');
+            }
+        }
+
+        async function signupDemo() {
+            // 1. Get all values from the form
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value; // Now getting real input
+            const name = document.getElementById('signup-name').value;
+            const dob = document.getElementById('signup-dob').value;
+            const gender = document.getElementById('signup-gender').value;
+
+            if (!email || !password || !name) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            if (supabaseClient) {
+                // 2. Create the Auth User
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    // We can pass extra metadata here
+                    options: {
+                        data: {
+                            full_name: name,
+                            dob: dob,
+                            gender: gender
+                        }
+                    }
+                });
+
+                if (error) {
+                    alert("Signup Error: " + error.message);
+                } else {
+                    // 3. Insert into the 'profiles' table (Optional but recommended)
+                    // Note: This requires the 'profiles' table to exist in your DB.
+                    // If you just want to get Auth working, you can comment this block out.
+                    const { error: profileError } = await supabaseClient
+                        .from('profiles')
+                        .insert([
+                            {
+                                id: data.user.id, // Links to Auth User
+                                email: email,
+                                full_name: name,
+                                dob: dob || null,
+                                gender: gender
+                            }
+                        ]);
+
+                    if (profileError) {
+                        console.error("Error saving profile details:", profileError);
+                    }
+
+                    alert("Account created! Please Log In.");
+                    // Switch back to Login view so they can use their new password
+                    switchAuthMode('login');
+                }
+            } else {
+                // Fallback
+                console.log("Simulating signup with password: " + password);
+                toggleAuthModal();
+                showView('onboarding');
+            }
+        }
+
+        // ==========================================
+        // 4. ONBOARDING WIZARD LOGIC
+        // ==========================================
+        let currentStep = 1;
+
+        function nextStep(step) {
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`step-${step}`).classList.remove('hidden');
+
+            const line = document.getElementById('progress-line');
+            const indicators = document.querySelectorAll('.step-indicator');
+
+            if (step === 1) line.style.width = "0%";
+            if (step === 2) line.style.width = "33%";
+            if (step === 3) line.style.width = "66%";
+            if (step === 4) line.style.width = "100%";
+
+            indicators.forEach((ind, index) => {
+                if (index + 1 <= step) {
+                    ind.classList.remove('bg-gray-200', 'text-gray-500');
+                    ind.classList.add('bg-primary', 'text-white');
+                } else {
+                    ind.classList.add('bg-gray-200', 'text-gray-500');
+                    ind.classList.remove('bg-primary', 'text-white');
+                }
+            });
+            currentStep = step;
+        }
+
+        function toggleLocTab(type) {
+            const zipContent = document.getElementById('loc-content-zip');
+            const cityContent = document.getElementById('loc-content-city');
+            const zipTab = document.getElementById('tab-zip');
+            const cityTab = document.getElementById('tab-city');
+
+            if (type === 'zip') {
+                zipContent.classList.remove('hidden');
+                cityContent.classList.add('hidden');
+                zipTab.classList.add('border-primary', 'text-primary');
+                cityTab.classList.remove('border-primary', 'text-primary');
+            } else {
+                zipContent.classList.add('hidden');
+                cityContent.classList.remove('hidden');
+                cityTab.classList.add('border-primary', 'text-primary');
+                zipTab.classList.remove('border-primary', 'text-primary');
+            }
+        }
+
+        function simulateCityFetch() {
+            const resultBox = document.getElementById('radius-results');
+            const radius = document.getElementById('radiusInput').value;
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = `<i class="ph-bold ph-map-pin"></i> Found <span class="font-bold">${Math.floor(Math.random() * 20) + 5} cities</span> within ${radius} miles.`;
+        }
+
+        // ==========================================
+        // 5. ACTIVITY & MATCHING LOGIC
+        // ==========================================
+        const activityMap = {
+            'low': { 'Outdoor': ['Hiking', 'Park Picnic'], 'Indoor': ['Board Game Night', 'Mall Walk'], 'Food': ['Street Tacos', 'Coffee Meetup'] },
+            'mid': { 'Outdoor': ['Kayaking', 'Minigolf'], 'Indoor': ['Museum Tour', 'Escape Room'], 'Food': ['Brunch', 'Casual Dining'] },
+            'high': { 'Outdoor': ['Guided City Tour', 'Theme Park'], 'Indoor': ['Pottery Class', 'Concert'], 'Food': ['Fine Dining', 'Wine Tasting'] },
+            'lux': { 'Outdoor': ['Yacht Rental', 'Private Retreat'], 'Indoor': ['VIP Theater', 'Spa Day'], 'Food': ['Michelin Star Dinner'] }
+        };
+
+        function updateSubActivities() {
+            const budgetEls = document.getElementsByName('budget');
+            let selectedBudget = 'low';
+            for (let el of budgetEls) if (el.checked) selectedBudget = el.value;
+
+            const interestEls = document.getElementsByName('interest');
+            let selectedInterests = [];
+            let foodSelected = false;
+
+            for (let el of interestEls) {
+                if (el.checked) {
+                    selectedInterests.push(el.value);
+                    if (el.value === 'Food') foodSelected = true;
+                }
+            }
+
+            const dietSection = document.getElementById('dietary-section');
+            if (foodSelected) dietSection.classList.remove('hidden');
+            else dietSection.classList.add('hidden');
+
+            const container = document.getElementById('dynamic-activities');
+            const list = document.getElementById('suggestions-list');
+            list.innerHTML = '';
+
+            if (selectedInterests.length > 0) {
+                container.classList.remove('hidden');
+                selectedInterests.forEach(interest => {
+                    if (activityMap[selectedBudget] && activityMap[selectedBudget][interest]) {
+                        const activities = activityMap[selectedBudget][interest];
+                        activities.forEach(act => {
+                            const badge = document.createElement('span');
+                            badge.className = "px-3 py-1 bg-white text-dark border border-gray-200 rounded-lg text-sm font-bold shadow-sm";
+                            badge.innerText = act;
+                            list.appendChild(badge);
+                        });
+                    }
+                });
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        // Mock Data for Match Logic
+        const mockPodMembers = [
+            { name: "Sarah J.", age: 27, job: "UX Designer", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
+            { name: "Mike T.", age: 29, job: "Teacher", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
+            { name: "Jessica L.", age: 26, job: "Nurse", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80" },
+            { name: "David R.", age: 30, job: "Engineer", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80" },
+            { name: "Alex K.", age: 28, job: "Chef", img: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=150&q=80" }
+        ];
+
+        function submitPreferences() {
+            // Save to DB would go here
+            nextStep(4);
+            setTimeout(() => {
+                renderGroup();
+                showView('group');
             }, 2500);
-        });
+        }
+
+        function renderGroup() {
+            const grid = document.getElementById('members-grid');
+            grid.innerHTML = '';
+            grid.innerHTML += `
+                        <div class="bg-primary/5 border-2 border-primary border-dashed p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+                            <div class="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center text-primary mb-3">
+                                <i class="ph-fill ph-user text-3xl"></i>
+                            </div>
+                            <h4 class="font-bold text-dark">You</h4>
+                            <p class="text-xs text-gray-500">Ready to mingle</p>
+                        </div>
+                    `;
+            mockPodMembers.forEach(member => {
+                grid.innerHTML += `
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow">
+                                <img src="${member.img}" class="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-2 border-white shadow-sm">
+                                <h4 class="font-bold text-dark">${member.name}</h4>
+                                <p class="text-xs text-gray-500 uppercase font-bold tracking-wide mb-1">${member.age} • ${member.job}</p>
+                            </div>
+                        `;
+            });
+        }
+
+        function endEventDemo() {
+            renderContactForm();
+            showView('contact');
+        }
+
+        function renderContactForm() {
+            const list = document.getElementById('contact-list');
+            list.innerHTML = '';
+            mockPodMembers.forEach((member, index) => {
+                list.innerHTML += `
+                            <div class="flex items-center justify-between p-4 bg-white rounded-xl mb-3 border border-gray-100">
+                                <div class="flex items-center gap-4">
+                                    <img src="${member.img}" class="w-12 h-12 rounded-full object-cover">
+                                    <div>
+                                        <h4 class="font-bold text-dark">${member.name}</h4>
+                                        <p class="text-xs text-gray-500">Did you connect?</p>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" id="contact-${index}">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                    <span class="ml-3 text-sm font-medium text-gray-900">Share</span>
+                                </label>
+                            </div>
+                        `;
+            });
+        }
+
+        function submitContacts() {
+            alert("Great! If they check 'Share' for you too, you'll receive an email introduction.");
+            showView('landing');
+        }
     </script>
 </body>
 </html>
